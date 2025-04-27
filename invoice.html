@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Logistics Invoice Generator</title>
+  <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-6">
+
+  <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-3xl">
+    <h2 class="text-2xl font-bold mb-6 text-center">Logistics Invoice Generator</h2>
+
+    <div class="mb-4">
+      <label class="block text-gray-700 mb-2">Company Name:</label>
+      <input id="companyName" type="text" class="w-full p-2 border rounded" placeholder="Your Logistics Company">
+    </div>
+
+    <div class="mb-4">
+      <label class="block text-gray-700 mb-2">Customer Name:</label>
+      <input id="customerName" type="text" class="w-full p-2 border rounded" placeholder="Customer Name">
+    </div>
+
+    <div class="mb-4">
+      <label class="block text-gray-700 mb-2">Customer Address:</label>
+      <input id="customerAddress" type="text" class="w-full p-2 border rounded" placeholder="Customer Address">
+    </div>
+
+    <div class="mb-4">
+      <label class="block text-gray-700 mb-2">Invoice Date:</label>
+      <input id="invoiceDate" type="date" class="w-full p-2 border rounded">
+    </div>
+
+    <div class="mb-6">
+      <label class="block text-gray-700 mb-2">Service Description:</label>
+      <input id="serviceDescription" type="text" class="w-full p-2 border rounded mb-2" placeholder="e.g., Delivery from Lagos to Abuja">
+
+      <label class="block text-gray-700 mb-2">Quantity:</label>
+      <input id="serviceQuantity" type="number" class="w-full p-2 border rounded mb-2" placeholder="e.g., 5">
+
+      <label class="block text-gray-700 mb-2">Price per Unit (₦):</label>
+      <input id="servicePrice" type="number" class="w-full p-2 border rounded" placeholder="e.g., 10000">
+    </div>
+
+    <div class="text-center">
+      <button onclick="generateInvoice()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded">
+        Generate Invoice PDF
+      </button>
+    </div>
+  </div>
+
+  <script>
+    async function generateInvoice() {
+      const { PDFDocument, StandardFonts, rgb } = PDFLib;
+
+      const companyName = document.getElementById('companyName').value;
+      const customerName = document.getElementById('customerName').value;
+      const customerAddress = document.getElementById('customerAddress').value;
+      const invoiceDate = document.getElementById('invoiceDate').value;
+      const description = document.getElementById('serviceDescription').value;
+      const quantity = parseInt(document.getElementById('serviceQuantity').value, 10);
+      const price = parseFloat(document.getElementById('servicePrice').value);
+
+      const totalAmount = quantity * price;
+
+      const pdfDoc = await PDFDocument.create();
+      const page = pdfDoc.addPage([600, 750]);
+      const { width, height } = page.getSize();
+
+      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+      page.drawText(`${companyName}`, { x: 50, y: height - 50, size: 20, font, color: rgb(0, 0, 0) });
+      page.drawText(`INVOICE`, { x: width - 120, y: height - 50, size: 20, font, color: rgb(0.2, 0.2, 0.7) });
+
+      page.drawText(`Date: ${invoiceDate}`, { x: 50, y: height - 90, size: 12, font });
+      page.drawText(`Billed To: ${customerName}`, { x: 50, y: height - 110, size: 12, font });
+      page.drawText(`Address: ${customerAddress}`, { x: 50, y: height - 130, size: 12, font });
+
+      page.drawLine({
+        start: { x: 50, y: height - 150 },
+        end: { x: width - 50, y: height - 150 },
+        thickness: 1,
+        color: rgb(0.8, 0.8, 0.8)
+      });
+
+      // Service Details
+      page.drawText(`Description: ${description}`, { x: 50, y: height - 180, size: 12, font });
+      page.drawText(`Quantity: ${quantity}`, { x: 50, y: height - 200, size: 12, font });
+      page.drawText(`Unit Price: ₦${price.toLocaleString()}`, { x: 50, y: height - 220, size: 12, font });
+      page.drawText(`Total: ₦${totalAmount.toLocaleString()}`, { x: 50, y: height - 250, size: 14, font, color: rgb(0, 0.5, 0) });
+
+      // Footer
+      page.drawLine({
+        start: { x: 50, y: 100 },
+        end: { x: width - 50, y: 100 },
+        thickness: 1,
+        color: rgb(0.8, 0.8, 0.8)
+      });
+      page.drawText('Thank you for choosing our logistics services!', { x: 50, y: 80, size: 10, font, color: rgb(0.5, 0.5, 0.5) });
+
+      const pdfBytes = await pdfDoc.save();
+
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `invoice_${customerName.replace(/\s+/g, '_')}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  </script>
+
+</body>
+</html>
